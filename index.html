@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="経費精算">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
+<title>経費精算アプリ</title>
+<style>
+:root{
+  --bg:#f4f5f7;--card:#fff;--ink:#1f2328;--sub:#5b6570;--line:#d5dae0;
+  --accent:#1f5fbf;--accent-soft:#e8f0fc;
+  --err:#c62828;--err-bg:#fdecea;--warn:#8a5a00;--warn-bg:#fff4dc;--ok:#1b7f3b;--ok-bg:#e7f6ec;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Yu Gothic UI","Yu Gothic","Meiryo","Hiragino Sans",system-ui,sans-serif;font-size:14px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.topin{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;padding:12px 16px}
+.brand{font-weight:700;font-size:18px;margin-right:auto;align-self:center}
+.brand small{display:block;font-size:11px;font-weight:400;color:var(--sub)}
+h2{font-size:16px;margin:0 0 12px}
+h3{font-size:15px;margin:0 0 10px}
+.fld{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fld>span{font-size:12px;color:var(--sub);font-weight:600}
+.req::after{content:"必須";font-size:10px;font-weight:600;background:var(--err);color:#fff;border-radius:3px;padding:0 4px;margin-left:6px;vertical-align:1px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);min-width:0;width:100%}
+input[type=checkbox],input[type=radio]{width:auto}
+input[type=file]{padding:5px;border-style:dashed}
+input:focus,select:focus,textarea:focus{outline:2px solid #9cc0f5;border-color:var(--accent)}
+.bad{border-color:var(--err)!important;background:var(--err-bg)!important}
+.seg.bad{outline:2px solid var(--err)}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:7px 14px;white-space:nowrap}
+button:hover{background:#f0f2f5}
+button.pri{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+button.pri:hover{background:#174b98}
+button.dng{color:var(--err)}
+button.sm{padding:3px 9px;font-size:12px}
+.tabs{display:flex;gap:2px;margin-top:8px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{border:none;background:none;padding:10px 16px;border-bottom:3px solid transparent;border-radius:0;color:var(--sub);font-weight:600}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.wide{grid-column:1/-1}
+.row{display:flex;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;align-self:flex-start}
+.seg label{padding:7px 20px;cursor:pointer;border-right:1px solid var(--line);user-select:none;background:#fff}
+.seg label:last-child{border-right:none}
+.seg label.on{background:var(--accent);color:#fff;font-weight:600}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.amt{font-size:18px;font-weight:700;padding:4px 0}
+.amt small{font-size:12px;font-weight:400;color:var(--sub)}
+.chkbx{display:flex;gap:6px;align-items:center;margin-top:10px;cursor:pointer}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.errs{margin-top:12px}
+.errs div{padding:6px 10px;border-radius:6px;margin-top:4px;font-size:13px}
+.e{background:var(--err-bg);color:var(--err)}
+.w{background:var(--warn-bg);color:var(--warn)}
+.rcp{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:760px){.two{grid-template-columns:1fr}}
+.pv{border:2px dashed var(--line);border-radius:8px;min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;background:#fafbfc;color:var(--sub);margin-top:8px;padding:6px}
+.pv.drag{border-color:var(--accent);background:var(--accent-soft)}
+.pv img{max-width:100%;max-height:420px;cursor:zoom-in}
+.thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.th{position:relative}
+.th img{width:60px;height:60px;object-fit:cover;border-radius:6px;border:2px solid var(--line);cursor:pointer;display:block}
+.th.sel img{border-color:var(--accent)}
+.th .pdfb{position:absolute;left:3px;bottom:3px;background:var(--err);color:#fff;font-size:9px;font-weight:700;padding:0 4px;border-radius:3px;pointer-events:none}
+.th button{position:absolute;top:-8px;right:-8px;padding:0 6px;border-radius:50%;font-size:12px;line-height:18px}
+.mt{font-size:13px;font-weight:600;margin-top:4px;min-height:20px}
+.mt.ok{color:var(--ok)}.mt.ng{color:var(--err)}
+.confirmbox{background:var(--accent-soft);border-radius:8px;padding:10px;margin-top:10px}
+.scroll{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:middle}
+.tbl th{background:#f7f8fa;font-size:12px;color:var(--sub);white-space:nowrap}
+.tbl tr.editing td{background:var(--accent-soft)}
+.tbl tfoot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none}
+.r{text-align:right!important;white-space:nowrap}.c{text-align:center!important}.nw{white-space:nowrap}
+.nw button{margin-left:4px}
+.bdg{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px;white-space:nowrap}
+.bdg.err{background:var(--err-bg);color:var(--err)}.bdg.warn{background:var(--warn-bg);color:var(--warn)}.bdg.ok{background:var(--ok-bg);color:var(--ok)}
+.empty{color:var(--sub);text-align:center;padding:24px}
+.sum{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center}
+.sum .k{font-size:12px;color:var(--sub)}
+.sum .v{font-size:20px;font-weight:700}
+.sum .v small{font-size:12px;font-weight:400;color:var(--sub);margin-left:4px}
+.sum .chk{margin-left:auto}
+.issues{width:100%;max-height:180px;overflow:auto}
+.issues div{font-size:13px;padding:4px 10px;border-radius:5px;margin-top:3px}
+.save{font-size:11px;color:var(--sub)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:4px;background:#eef1f4;border-radius:14px;padding:3px 4px 3px 11px}
+.chip button{border:none;background:none;padding:0 6px;color:var(--sub)}
+.note{font-size:12px;color:var(--sub)}
+.modal{position:fixed;inset:0;background:rgba(20,24,30,.5);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.mbox{background:#fff;border-radius:10px;max-width:720px;width:100%;max-height:90vh;overflow:auto;padding:20px}
+.mbox img{max-width:100%;display:block;margin:0 auto}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30;max-width:90vw}
+.toast.on{opacity:1}
+ol.guide{margin:0;padding-left:20px}
+ol.guide li{margin-bottom:4px}
+.tip{background:var(--accent-soft);border-color:#b9cff2;display:flex;gap:12px;align-items:flex-start}
+.tip p{margin:0;flex:1}
+
+/* ===== スマートフォン（iPhone など） ===== */
+@media (max-width:640px){
+  body{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
+  .wrap{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  header.top{position:static}
+  .topin{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
+  .brand{grid-column:1/-1}
+  .topin .fld:first-of-type{grid-column:1/-1}
+  .topin .fld input{width:100%!important}
+  #b_pdf{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:6;padding:14px;font-size:16px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+  input,select,textarea{font-size:16px} /* 16px未満だとiPhoneで入力時に画面が拡大される */
+  .grid{grid-template-columns:1fr 1fr;gap:10px}
+  .card{padding:14px;margin:12px 0}
+  .tab{flex:1;padding:10px 4px}
+  .seg label{padding:9px 22px}
+  button{padding:9px 14px}
+  button.sm{padding:6px 12px;font-size:13px}
+  .sum .chk{margin-left:0}
+  .pv img{max-height:340px}
+  /* 明細表はカード表示に切り替え */
+  .tbl.cards thead{display:none}
+  .tbl.cards,.tbl.cards tbody,.tbl.cards tfoot,.tbl.cards tr,.tbl.cards td{display:block;width:100%}
+  .tbl.cards tr{border:1px solid var(--line);border-radius:8px;margin-bottom:10px;padding:6px 12px}
+  .tbl.cards tr.editing{border-color:var(--accent)}
+  .tbl.cards td{border:none;padding:4px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:right!important;white-space:normal}
+  .tbl.cards td::before{content:attr(data-l);color:var(--sub);font-size:12px;text-align:left;flex:none}
+  .tbl.cards td:empty{display:none}
+  .tbl.cards tfoot tr{border:2px solid var(--ink)}
+  .tbl.cards tfoot td{border:none}
+}
+
+/* ===== 印刷（PDF） ===== */
+#print{display:none}
+@page{size:A4 portrait;margin:12mm}
+@media print{
+  html,body{background:#fff!important}
+  #app,#modal,#toast{display:none!important}
+  #print{display:block!important}
+  .pg{break-after:page}
+  .pg:last-child{break-after:auto}
+}
+#print{color:#000;font-size:10pt;font-family:"Yu Gothic","Meiryo",sans-serif}
+#print h1{font-size:17pt;text-align:center;letter-spacing:.25em;margin:0 0 5mm}
+#print h2{font-size:11pt;margin:6mm 0 2mm;border-left:3pt solid #333;padding-left:2mm}
+#print .pm{display:flex;justify-content:flex-end;gap:8mm;margin-bottom:4mm}
+#print table{width:100%;border-collapse:collapse;font-size:9pt}
+#print th,#print td{border:.5pt solid #444;padding:1.4mm 1.8mm;vertical-align:top}
+#print thead th{background:#e6e9ed;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:nowrap}
+#print tfoot th,#print tfoot td{font-weight:700;background:#f3f4f6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#print .r{text-align:right}#print .c{text-align:center}
+#print ul{margin:0;padding-left:5mm;font-size:9pt}
+#print .stamps{display:flex;justify-content:flex-end;margin-top:8mm}
+#print .stamps div{width:24mm;height:26mm;border:.5pt solid #444;margin-left:-.5pt;text-align:center;font-size:8pt}
+#print .stamps span{display:block;border-bottom:.5pt solid #444;padding:.8mm 0}
+#print .pf{font-size:8pt;color:#444;margin-top:6mm}
+#print .rcs{display:grid;grid-template-columns:1fr 1fr;gap:5mm}
+#print .rc{break-inside:avoid;margin:0;border:.5pt solid #999;padding:2mm}
+#print .rc img{display:block;max-width:100%;max-height:118mm;margin:0 auto}
+#print .rc figcaption{font-size:8pt;margin-top:1.5mm}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="wrap topin">
+      <div class="brand">経費精算アプリ<small>入力チェック付き・税理士提出用PDF発行</small></div>
+      <label class="fld"><span class="req">申請者</span><input id="h_app" placeholder="氏名" style="width:150px"></label>
+      <label class="fld"><span class="req">対象月</span><input id="h_month" type="month" style="width:160px"></label>
+      <label class="fld"><span class="req">申請日</span><input id="h_date" type="date" style="width:160px"></label>
+      <button id="b_pdf" class="pri">提出前チェック → PDF発行</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card tip" id="iosTip" hidden>
+      <p><b>iPhoneをお使いの方へ：</b>Safariの共有ボタン（□↑）→「ホーム画面に追加」から開いてください。Safariで開いたまま7日間使わないと、入力したデータが自動で消えることがあります。</p>
+      <button class="sm" id="iosTipClose">閉じる</button>
+    </section>
+    <section class="card">
+      <div class="sum" id="summary"></div>
+      <div class="issues" id="issues"></div>
+      <details style="margin-top:10px">
+        <summary class="note" style="cursor:pointer">精算書の備考欄に記載する内容（任意）</summary>
+        <textarea id="h_note" rows="2" style="margin-top:6px" placeholder="例：7月分の通信費（5月・6月分）を含みます"></textarea>
+      </details>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab on" data-tab="t">交通費</button>
+      <button class="tab" data-tab="e">立替経費</button>
+      <button class="tab" data-tab="s">設定・バックアップ</button>
+    </nav>
+
+    <!-- ========== 交通費 ========== -->
+    <div id="pane-t">
+      <section class="card" id="t_form">
+        <h2 id="t_title">交通費を追加</h2>
+        <div class="grid">
+          <label class="fld"><span class="req">日付</span><input id="t_date" type="date"></label>
+          <label class="fld"><span class="req">行先</span><input id="t_dest" list="destList" placeholder="例：事務所" autocomplete="off"></label>
+          <label class="fld"><span>よく使う区間から選ぶ</span><select id="t_route"></select></label>
+          <label class="fld"><span class="req">交通機関</span><select id="t_mode"></select></label>
+          <label class="fld"><span class="req" id="l_from">出発</span><input id="t_from" placeholder="例：新宿"></label>
+          <div class="fld" id="w_to"><span class="req">到着</span>
+            <div class="row"><input id="t_to" placeholder="例：東京"><button type="button" id="t_swap" title="出発と到着を入れ替え">⇄</button></div>
+          </div>
+          <div class="fld" id="w_trip"><span class="req">片道／往復</span>
+            <div class="seg" id="t_trip">
+              <label><input type="radio" name="trip" value="片">片道</label><label><input type="radio" name="trip" value="往">往復</label>
+            </div>
+          </div>
+          <label class="fld"><span class="req" id="l_fare">片道運賃</span><input id="t_fare" inputmode="numeric" placeholder="例：1374" autocomplete="off"></label>
+          <div class="fld"><span>精算金額</span><div class="amt" id="t_amt">—</div></div>
+          <label class="fld wide"><span>備考</span><input id="t_note" placeholder="用件など（任意）"></label>
+        </div>
+        <div class="rcp">
+          <div>
+            <div class="fld"><span id="l_trcpt">領収書の写真（任意）</span><input type="file" id="t_file" accept="image/*,application/pdf,.pdf" multiple></div>
+            <div class="thumbs" id="t_thumbs"></div>
+            <label class="chkbx" id="t_noRcptWrap" hidden><input type="checkbox" id="t_noRcpt">領収書なし</label>
+            <input id="t_noRcptReason" placeholder="領収書がない理由" hidden style="margin-top:6px">
+          </div>
+          <div class="confirmbox" id="t_confirmWrap" hidden>
+            <label class="fld"><span class="req">領収書を見て合計金額を入力（貼り付け不可）</span><input id="t_confirm" inputmode="numeric" autocomplete="off"></label>
+            <div class="mt" id="t_mt"></div>
+          </div>
+        </div>
+        <label class="chkbx"><input type="checkbox" id="t_saveRoute">この区間と運賃を「よく使う区間」に登録する</label>
+        <div class="errs" id="t_errs"></div>
+        <div class="acts">
+          <button class="pri" id="t_add">追加する</button>
+          <button id="t_cancel" hidden>編集をやめる</button>
+          <button id="t_clear">入力をクリア</button>
+        </div>
+      </section>
+      <section class="card">
+        <h2>交通費の明細</h2>
+        <div class="scroll" id="t_list"></div>
+      </section>
+    </div>
+
+    <!-- ========== 立替経費 ========== -->
+    <div id="pane-e" hidden>
+      <section class="card" id="e_form">
+        <h2 id="e_title">立替経費を追加</h2>
+        <div class="two">
+          <div>
+            <div class="grid">
+              <label class="fld"><span class="req">日付</span><input id="e_date" type="date"></label>
+              <label class="fld"><span class="req">内容（科目）</span><select id="e_cat"></select></label>
+              <label class="fld"><span class="req">支払先</span><input id="e_payee" placeholder="例：NTT"></label>
+              <label class="fld"><span id="l_people">人数</span><input id="e_people" inputmode="numeric" placeholder="会議費・交際費のみ" autocomplete="off"></label>
+              <label class="fld"><span class="req">金額（税込）</span><input id="e_amount" inputmode="numeric" placeholder="例：1650" autocomplete="off"></label>
+              <div class="fld"><span>1人あたり</span><div class="amt" id="e_per">—</div></div>
+              <label class="fld wide"><span id="l_note">備考</span><input id="e_note" placeholder="会食・贈答は取引先名・目的を記入"></label>
+            </div>
+            <p class="note">会議費：参加者1人あたりの飲食費が10,000円以下。超える場合や贈答品は接待交際費になります（判断に迷う場合は税理士に確認してください）。</p>
+          </div>
+          <div>
+            <div class="fld"><span class="req" id="l_ercpt">領収書・請求書（写真またはPDF）</span><input type="file" id="e_file" accept="image/*,application/pdf,.pdf" multiple></div>
+            <div class="pv" id="e_pv">ここに領収書・請求書（写真またはPDF）をドロップ<br>または上のボタンで選択</div>
+            <div class="thumbs" id="e_thumbs"></div>
+            <div class="confirmbox" id="e_confirmWrap" hidden>
+              <label class="fld"><span class="req">添付した領収書・請求書を見て合計金額を入力（貼り付け不可）</span><input id="e_confirm" inputmode="numeric" autocomplete="off"></label>
+              <div class="mt" id="e_mt"></div>
+            </div>
+            <label class="chkbx" id="e_noRcptWrap"><input type="checkbox" id="e_noRcpt">領収書なし（出金伝票扱い）</label>
+            <input id="e_noRcptReason" placeholder="領収書がない理由（例：香典のため領収書なし）" hidden style="margin-top:6px">
+          </div>
+        </div>
+        <div class="errs" id="e_errs"></div>
+        <div class="acts">
+          <button class="pri" id="e_add">追加する</button>
+          <button id="e_cancel" hidden>編集をやめる</button>
+          <button id="e_clear">入力をクリア</button>
+        </div>
+      </section>
+      <section class="card">
+        <h2>立替経費の明細</h2>
+        <div class="scroll" id="e_list"></div>
+      </section>
+    </div>
+
+    <!-- ========== 設定 ========== -->
+    <div id="pane-s" hidden>
+      <section class="card">
+        <h2>使い方</h2>
+        <ol class="guide">
+          <li>上の欄に<b>申請者・対象月・申請日</b>を入力します。</li>
+          <li>「交通費」「立替経費」タブで明細を1件ずつ追加します。未入力の必須項目があると追加できません。</li>
+          <li>立替経費は<b>領収書の写真、または請求書のPDFを添付</b>し、それを見ながら<b>金額をもう一度手入力</b>します。金額欄と一致しないと追加できません。PDFは1ページずつ画像として取り込みます（最大10ページ。読み込みにはインターネット接続が必要です）。</li>
+          <li>「提出前チェック → PDF発行」を押し、印刷画面で送信先を<b>「PDFに保存」</b>（または Microsoft Print to PDF）にして保存します。</li>
+        </ol>
+        <p class="note"><b>iPhoneの場合：</b>Safariで開き、共有ボタン（□↑）→「ホーム画面に追加」してアイコンから使ってください。領収書は「写真を撮る」で直接撮影できます。PDFはプリントオプションの共有ボタン →「"ファイル"に保存」で保存します。</p>
+        <p class="note">データはこの端末のブラウザ内にだけ自動保存されます（PCとiPhoneの間で自動的には共有されません）。ブラウザの履歴削除などで消えることがあるため、月ごとにバックアップを保存してください。</p>
+      </section>
+      <section class="card">
+        <h2>よく使う区間（運賃マスタ）</h2>
+        <p class="note">登録した区間は交通費の入力で選ぶだけで出発・到着・運賃が入ります。登録と異なる運賃を入力すると注意が出ます。</p>
+        <div class="scroll" id="s_routes"></div>
+        <div class="grid" style="margin-top:12px">
+          <label class="fld"><span>出発</span><input id="s_from"></label>
+          <label class="fld"><span>到着</span><input id="s_to"></label>
+          <label class="fld"><span>交通機関</span><select id="s_mode"></select></label>
+          <label class="fld"><span>片道運賃</span><input id="s_fare" inputmode="numeric"></label>
+          <div class="fld"><span>&nbsp;</span><button id="s_addRoute">区間を登録</button></div>
+        </div>
+      </section>
+      <section class="card">
+        <h2>行先の候補</h2>
+        <div class="chips" id="s_dests"></div>
+        <div class="row" style="margin-top:10px;max-width:420px"><input id="s_dest" placeholder="例：取引先A社"><button id="s_addDest">追加</button></div>
+      </section>
+      <section class="card">
+        <h2>バックアップ</h2>
+        <div class="acts" style="margin-top:0">
+          <button id="s_export">バックアップを保存（.json）</button>
+          <button id="s_importBtn">バックアップから復元</button>
+          <input type="file" id="s_import" accept=".json,application/json" hidden>
+        </div>
+        <p class="note">復元すると、いま入っているデータはバックアップの内容に置き換わります。</p>
+        <p class="save" id="saveStatus"></p>
+      </section>
+    </div>
+  </main>
+</div>
+
+<datalist id="destList"></datalist>
+<div id="print"></div>
+<div id="modal" class="modal" hidden><div class="mbox"><div id="mbody"></div><div class="mfoot" id="mfoot"></div></div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+'use strict';
+/* ---------- マスタ（元Excel「リスト」シート準拠） ---------- */
+const MODES=['電車(JR)','電車(私鉄)','地下鉄','新幹線','バス','タクシー','レンタル自転車','駐車場代'];
+const FIXED_MODES=['タクシー','駐車場代'];          // 運賃×往復ではなく、支払った合計額を入力
+const RCPT_MODES=['新幹線','タクシー','駐車場代'];  // 領収書必須
+const CATS=['通信費','会議費','接待交際費','消耗品費','会社備品費','事務用品費','雑費','車両費','租税公課','支払手数料','保険料'];
+const ENT_CATS=['会議費','接待交際費'];
+const MEETING_LIMIT=10000;
+
+const $=id=>document.getElementById(id);
+const IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const IS_STANDALONE=navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+const pad=n=>String(n).padStart(2,'0');
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
+const thisMonth=()=>today().slice(0,7);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen=n=>(Number.isFinite(n)?'¥'+n.toLocaleString('ja-JP'):'—');
+const fmtDate=d=>d?d.replace(/-/g,'/'):'';
+const monthLabel=(k)=>{const [y,m]=(k||state.currentMonth).split('-');return `${y}年${+m}月`;};
+/* 全角数字・カンマ・円記号を許容し、整数以外は null */
+function num(v){
+  const s=String(v??'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[,，¥￥円\s]/g,'');
+  return /^\d+$/.test(s)?parseInt(s,10):null;
+}
+const sumAmt=rows=>rows.reduce((a,r)=>a+(Number.isFinite(r.amount)?r.amount:0),0);
+
+/* ---------- 保存（IndexedDB） ---------- */
+const idb={db:null,
+  open(){return new Promise(res=>{try{const rq=indexedDB.open('keihi-seisan-app',1);
+    rq.onupgradeneeded=()=>rq.result.createObjectStore('kv');
+    rq.onsuccess=()=>{idb.db=rq.result;res(true);};rq.onerror=()=>res(false);rq.onblocked=()=>res(false);}catch(e){res(false);}});},
+  get(k){return new Promise(res=>{if(!idb.db)return res(undefined);try{const rq=idb.db.transaction('kv').objectStore('kv').get(k);
+    rq.onsuccess=()=>res(rq.result);rq.onerror=()=>res(undefined);}catch(e){res(undefined);}});},
+  set(k,v){return new Promise(res=>{if(!idb.db)return res(false);try{const tx=idb.db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);
+    tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);tx.onabort=()=>res(false);}catch(e){res(false);}});}
+};
+let state=null;
+function defaults(){return{version:1,applicant:'',currentMonth:thisMonth(),months:{},
+  routes:[], // 公開ファイルに個人の通勤経路を含めないため、区間は各自が登録する
+  dests:['事務所','税理士事務所','自宅','取引先']};}
+function migrate(s){
+  const d=defaults();
+  s=Object.assign({},d,s);
+  if(!s.months||typeof s.months!=='object')s.months={};
+  if(!Array.isArray(s.routes))s.routes=[];
+  if(!Array.isArray(s.dests))s.dests=[];
+  for(const k in s.months){const m=s.months[k];m.transport=Array.isArray(m.transport)?m.transport:[];m.expense=Array.isArray(m.expense)?m.expense:[];
+    [...m.transport,...m.expense].forEach(r=>{if(!Array.isArray(r.receipts))r.receipts=[];});}
+  return s;
+}
+function M(){
+  const k=state.currentMonth;
+  if(!state.months[k])state.months[k]={applyDate:today(),note:'',transport:[],expense:[]};
+  return state.months[k];
+}
+async function save(){
+  const ok=await idb.set('state',state);
+  $('saveStatus').textContent=ok?`このブラウザに自動保存しました（${new Date().toLocaleTimeString('ja-JP')}）`
+    :'⚠ ブラウザに保存できませんでした。バックアップを保存してください。';
+  if(!ok)toast('ブラウザに保存できませんでした。バックアップを保存してください。');
+}
+
+/* ---------- 共通UI ---------- */
+let toastTimer;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),3200);}
+function showModal(title,html,btns){
+  $('mbody').innerHTML=(title?`<h3>${esc(title)}</h3>`:'')+html;
+  const f=$('mfoot');f.innerHTML='';
+  (btns||[{label:'閉じる'}]).forEach(b=>{const el=document.createElement('button');el.textContent=b.label;if(b.pri)el.className='pri';
+    el.onclick=()=>{$('modal').hidden=true;if(b.fn)b.fn();};f.appendChild(el);});
+  $('modal').hidden=false;
+}
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal')$('modal').hidden=true;});
+function viewImg(src){showModal('',`<img src="${esc(src)}" alt="領収書">`);}
+const issueHtml=list=>list.map(x=>`<div class="${x.lv==='err'?'e':'w'}">${x.where?`<b>${esc(x.where)}</b>：`:''}${esc(x.m)}</div>`).join('');
+
+async function resizeImage(file){
+  const url=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file);});
+  const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url;});
+  const max=1600,s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+  const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);
+  const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',0.85);
+}
+/* PDF（請求書など）は pdf.js で1ページずつ画像に変換して添付する。初回のみインターネット接続が必要 */
+const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+const MAX_PDF_PAGES=10;
+let pdfjsPromise=null;
+function loadPdfJs(){
+  if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
+  if(!pdfjsPromise)pdfjsPromise=new Promise((res,rej)=>{
+    // legacy ビルドは古めの iOS Safari でも動く
+    const s=document.createElement('script');s.src=PDFJS+'legacy/build/pdf.min.js';
+    s.onload=()=>{window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'legacy/build/pdf.worker.min.js';res(window.pdfjsLib);};
+    s.onerror=()=>{pdfjsPromise=null;s.remove();rej(new Error('pdfjs-load'));};
+    document.head.appendChild(s);
+  });
+  return pdfjsPromise;
+}
+async function pdfToImages(file){
+  const lib=await loadPdfJs();
+  const doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer()),
+    cMapUrl:PDFJS+'cmaps/',cMapPacked:true,standardFontDataUrl:PDFJS+'standard_fonts/'}).promise;
+  const n=Math.min(doc.numPages,MAX_PDF_PAGES),out=[];
+  for(let p=1;p<=n;p++){
+    const page=await doc.getPage(p),vp1=page.getViewport({scale:1});
+    const vp=page.getViewport({scale:Math.min(2.5,1600/Math.max(vp1.width,vp1.height))});
+    const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);
+    const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);
+    await page.render({canvasContext:g,viewport:vp}).promise;
+    out.push({src:c.toDataURL('image/jpeg',0.85),label:`${file.name}（${p}/${doc.numPages}ページ）`});
+  }
+  if(doc.numPages>n)toast(`「${file.name}」は${doc.numPages}ページあるため、先頭${n}ページだけ添付しました`);
+  return out;
+}
+const isPdfFile=f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name);
+const srcOf=x=>typeof x==='string'?x:x.src;
+const labelOf=x=>typeof x==='string'?'':x.label||'';
+async function addFiles(files,arr){
+  for(const f of files){
+    const pdf=isPdfFile(f);
+    try{
+      if(pdf){toast(`「${f.name}」を読み込んでいます…`);arr.push(...await pdfToImages(f));}
+      else arr.push(await resizeImage(f));
+    }catch(e){
+      toast(!pdf?`「${f.name}」を読み込めませんでした。JPEG・PNGの画像かPDFを選んでください。`
+        :e.message==='pdfjs-load'?'PDFの読み込みにはインターネット接続が必要です。接続を確認してもう一度選んでください。'
+        :`「${f.name}」を読み込めませんでした（パスワード付きPDFなどは読み込めません）。`);
+    }
+  }
+}
+function blockPaste(el){
+  ['paste','drop'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();toast('領収書を見て、金額を手で入力してください');}));
+}
+function fillSelect(sel,items,placeholder){
+  sel.innerHTML=(placeholder!=null?`<option value="">${esc(placeholder)}</option>`:'')+items.map(v=>`<option>${esc(v)}</option>`).join('');
+}
+
+/* ---------- チェックロジック ---------- */
+function findRoute(a,b){return state.routes.find(x=>(x.from===a&&x.to===b)||(x.from===b&&x.to===a));}
+function calcT(r){
+  if(!Number.isFinite(r.fare))return null;
+  if(FIXED_MODES.includes(r.mode))return r.fare;
+  return r.trip==='往'?r.fare*2:r.fare;
+}
+function checkReceipt(r,need,E){
+  const has=r.receipts&&r.receipts.length>0;
+  if(has){
+    if(!Number.isFinite(r.confirm))E.push({f:'confirm',m:'領収書を見て金額をもう一度入力してください'});
+    else if(r.confirm!==r.amount)E.push({f:'confirm',m:`領収書の金額（${yen(r.confirm)}）と入力金額（${yen(r.amount)}）が一致しません`});
+  }else if(need){
+    if(!r.noReceipt)E.push({f:'file',m:'領収書・請求書（写真またはPDF）を添付してください（ない場合は「領収書なし」にチェックして理由を入力）'});
+    else if(!r.noReceiptReason)E.push({f:'noRcptReason',m:'領収書がない理由を入力してください'});
+  }
+}
+function monthWarn(r,W){
+  if(r.date&&r.date.slice(0,7)!==state.currentMonth)W.push({f:'date',m:`対象月（${monthLabel()}）以外の日付です。計上月を確認してください`});
+}
+function validateT(r){
+  const E=[],W=[],fixed=FIXED_MODES.includes(r.mode),park=r.mode==='駐車場代';
+  if(!r.date)E.push({f:'date',m:'日付が未入力です'});
+  if(!r.dest)E.push({f:'dest',m:'行先が未入力です'});
+  if(!r.mode)E.push({f:'mode',m:'交通機関を選んでください'});
+  if(park){if(!r.from)E.push({f:'from',m:'駐車場所が未入力です'});}
+  else{
+    if(!r.from)E.push({f:'from',m:'出発が未入力です'});
+    if(!r.to)E.push({f:'to',m:'到着が未入力です'});
+    if(r.from&&r.to&&r.from===r.to)E.push({f:'to',m:'出発と到着が同じです'});
+    if(!r.trip)E.push({f:'trip',m:'片道か往復かを選んでください'});
+  }
+  if(!(r.fare>0))E.push({f:'fare',m:(fixed?'金額':'片道運賃')+'が未入力か、数字以外が含まれています'});
+  checkReceipt(r,RCPT_MODES.includes(r.mode),E);
+  monthWarn(r,W);
+  if(!fixed&&!park&&r.from&&r.to&&r.fare>0){const rt=findRoute(r.from,r.to);
+    if(rt&&rt.fare!==r.fare)W.push({f:'fare',m:`よく使う区間に登録された片道運賃（${yen(rt.fare)}）と異なります`});}
+  if(r.mode!=='新幹線'&&r.amount>=10000)W.push({f:'fare',m:`金額が${yen(r.amount)}です。桁の誤りがないか確認してください`});
+  return{errors:E,warnings:W};
+}
+function validateE(r){
+  const E=[],W=[];
+  if(!r.date)E.push({f:'date',m:'日付が未入力です'});
+  if(!r.cat)E.push({f:'cat',m:'内容（科目）を選んでください'});
+  if(!r.payee)E.push({f:'payee',m:'支払先が未入力です'});
+  if(!(r.amount>0))E.push({f:'amount',m:'金額が未入力か、数字以外が含まれています'});
+  if(ENT_CATS.includes(r.cat)){
+    if(!(r.people>0))E.push({f:'people',m:`${r.cat}は人数の入力が必要です`});
+    if(!r.note)E.push({f:'note',m:`${r.cat}は備考に取引先名・目的を入力してください`});
+  }
+  if(r.cat==='会議費'&&r.people>0&&r.amount>0&&r.amount/r.people>MEETING_LIMIT)
+    E.push({f:'cat',m:`1人あたり${yen(Math.floor(r.amount/r.people))}で10,000円を超えるため、会議費ではなく接待交際費です`});
+  checkReceipt(r,true,E);
+  monthWarn(r,W);
+  return{errors:E,warnings:W};
+}
+const keyT=r=>[r.date,r.mode,r.from,r.to,r.trip,r.amount].join('|');
+const keyE=r=>[r.date,r.payee,r.amount].join('|');
+function dupWarn(r,rows,keyFn){
+  return rows.some(x=>x.id!==r.id&&keyFn(x)===keyFn(r))?[{f:'date',m:'同じ日付・内容・金額の明細がすでにあります（二重登録の可能性）'}]:[];
+}
+function checkAll(){
+  const m=M(),out=[];
+  if(!state.applicant.trim())out.push({lv:'err',where:'申請者',m:'申請者名が未入力です'});
+  if(!m.applyDate)out.push({lv:'err',where:'申請日',m:'申請日が未入力です'});
+  if(!m.transport.length&&!m.expense.length)out.push({lv:'err',where:'明細',m:`${monthLabel()}の明細が1件もありません`});
+  m.transport.forEach((r,i)=>{const v=validateT(r),w=`交通費 No.${i+1}`;
+    v.errors.forEach(x=>out.push({lv:'err',where:w,m:x.m}));
+    [...v.warnings,...dupWarn(r,m.transport.slice(0,i),keyT)].forEach(x=>out.push({lv:'warn',where:w,m:x.m}));});
+  m.expense.forEach((r,i)=>{const v=validateE(r),w=`立替経費 No.${i+1}`;
+    v.errors.forEach(x=>out.push({lv:'err',where:w,m:x.m}));
+    [...v.warnings,...dupWarn(r,m.expense.slice(0,i),keyE)].forEach(x=>out.push({lv:'warn',where:w,m:x.m}));});
+  return out;
+}
+function showErrs(p,v){
+  document.querySelectorAll(`#${p}_form .bad`).forEach(el=>el.classList.remove('bad'));
+  v.errors.forEach(x=>{const el=$(`${p}_${x.f}`);if(el)el.classList.add('bad');});
+  $(`${p}_errs`).innerHTML=issueHtml([...v.errors.map(x=>({lv:'err',m:x.m})),...v.warnings.map(x=>({lv:'warn',m:x.m}))]);
+}
+function badge(v){
+  return v.errors.length?'<span class="bdg err">要修正</span>':v.warnings.length?'<span class="bdg warn">注意</span>':'<span class="bdg ok">OK</span>';
+}
+function sortRows(rows){rows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));}
+
+/* ---------- 交通費フォーム ---------- */
+let editT=null,draftT=[];
+function readT(){
+  const mode=$('t_mode').value,park=mode==='駐車場代';
+  const trip=park?'':(document.querySelector('input[name=trip]:checked')||{}).value||'';
+  const r={id:editT||uid(),date:$('t_date').value,dest:$('t_dest').value.trim(),mode,
+    from:$('t_from').value.trim(),to:park?'':$('t_to').value.trim(),trip,fare:num($('t_fare').value),
+    note:$('t_note').value.trim(),receipts:[...draftT],confirm:num($('t_confirm').value),
+    noReceipt:$('t_noRcpt').checked,noReceiptReason:$('t_noRcptReason').value.trim()};
+  r.amount=calcT(r);
+  return r;
+}
+function syncSeg(){document.querySelectorAll('#t_trip label').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));}
+function updateT(){
+  const mode=$('t_mode').value,fixed=FIXED_MODES.includes(mode),park=mode==='駐車場代',need=RCPT_MODES.includes(mode);
+  $('l_fare').textContent=fixed?'金額（支払った合計）':'片道運賃';
+  $('l_from').textContent=park?'駐車場所':'出発';
+  $('w_to').hidden=park;$('w_trip').hidden=park;
+  $('l_trcpt').textContent=need?'領収書（写真またはPDF）':'領収書（写真またはPDF・任意）';
+  $('l_trcpt').classList.toggle('req',need);
+  syncSeg();
+  const r=readT();
+  $('t_amt').innerHTML=r.amount>0?yen(r.amount)+(!fixed&&r.trip==='往'?` <small>（${r.fare.toLocaleString()}×2）</small>`:(!fixed&&!r.trip?' <small>片道／往復が未選択</small>':'')):'—';
+  const has=draftT.length>0;
+  $('t_confirmWrap').hidden=!has;
+  $('t_noRcptWrap').hidden=has||!need;
+  $('t_noRcptReason').hidden=has||!need||!$('t_noRcpt').checked;
+  matchInd('t_mt',r.confirm,r.amount,$('t_confirm').value);
+  renderThumbs('t',draftT);
+}
+function matchInd(id,c,a,raw){
+  const el=$(id);
+  if(!String(raw).trim()){el.className='mt';el.textContent='';return;}
+  if(c!==null&&c===a){el.className='mt ok';el.textContent='✓ 入力金額と一致しています';}
+  else{el.className='mt ng';el.textContent=c===null?'✗ 数字で入力してください':`✗ 入力金額（${yen(a)}）と一致しません`;}
+}
+let selE=0;
+const PV_EMPTY='ここに領収書・請求書（写真またはPDF）をドロップ<br>または上のボタンで選択';
+function renderThumbs(p,arr){
+  $(`${p}_thumbs`).innerHTML=arr.map((x,i)=>`<div class="th${p==='e'&&i===selE?' sel':''}" title="${esc(labelOf(x))}"><img src="${esc(srcOf(x))}" data-act="thumb" data-p="${p}" data-i="${i}" alt="領収書${i+1}">${labelOf(x)?'<span class="pdfb">PDF</span>':''}<button class="sm" data-act="rmThumb" data-p="${p}" data-i="${i}" title="削除">×</button></div>`).join('');
+}
+function clearT(keepDate){
+  const d=$('t_date').value;
+  ['t_date','t_dest','t_from','t_to','t_fare','t_note','t_confirm','t_noRcptReason'].forEach(id=>$(id).value='');
+  if(keepDate)$('t_date').value=d;
+  $('t_mode').value='';$('t_route').value='';$('t_noRcpt').checked=false;$('t_saveRoute').checked=false;
+  document.querySelectorAll('input[name=trip]').forEach(x=>x.checked=false);
+  draftT=[];editT=null;
+  $('t_title').textContent='交通費を追加';$('t_add').textContent='追加する';$('t_cancel').hidden=true;
+  showErrs('t',{errors:[],warnings:[]});
+  updateT();renderT();
+}
+function loadT(r){
+  editT=r.id;draftT=[...r.receipts];
+  $('t_date').value=r.date||'';$('t_dest').value=r.dest||'';$('t_mode').value=r.mode||'';$('t_from').value=r.from||'';$('t_to').value=r.to||'';
+  $('t_fare').value=Number.isFinite(r.fare)?r.fare:'';$('t_note').value=r.note||'';$('t_confirm').value=Number.isFinite(r.confirm)?r.confirm:'';
+  $('t_noRcpt').checked=!!r.noReceipt;$('t_noRcptReason').value=r.noReceiptReason||'';
+  document.querySelectorAll('input[name=trip]').forEach(x=>x.checked=x.value===r.trip);
+  const i=M().transport.findIndex(x=>x.id===r.id);
+  $('t_title').textContent=`交通費 No.${i+1} を編集`;$('t_add').textContent='更新する';$('t_cancel').hidden=false;
+  showErrs('t',validateT(r));updateT();renderT();
+  $('t_form').scrollIntoView({behavior:'smooth'});
+}
+function submitT(){
+  const r=readT(),v=validateT(r),m=M();
+  v.warnings.push(...dupWarn(r,m.transport,keyT));
+  showErrs('t',v);
+  if(v.errors.length){toast('赤い項目を確認してください');return;}
+  const commit=()=>{
+    const i=m.transport.findIndex(x=>x.id===r.id);
+    if(i>=0)m.transport[i]=r;else m.transport.push(r);
+    sortRows(m.transport);
+    if(r.dest&&!state.dests.includes(r.dest))state.dests.push(r.dest);
+    if($('t_saveRoute').checked&&!FIXED_MODES.includes(r.mode)&&!findRoute(r.from,r.to))
+      state.routes.push({id:uid(),from:r.from,to:r.to,mode:r.mode,fare:r.fare});
+    toast(i>=0?'更新しました':'追加しました');
+    save();clearT(true);renderAll();
+  };
+  if(v.warnings.length)showModal('確認してください',issueHtml(v.warnings.map(x=>({lv:'warn',m:x.m}))),[{label:'戻って直す'},{label:'このまま登録',pri:true,fn:commit}]);
+  else commit();
+}
+
+/* ---------- 立替経費フォーム ---------- */
+let editE=null,draftE=[];
+function readE(){
+  return{id:editE||uid(),date:$('e_date').value,cat:$('e_cat').value,payee:$('e_payee').value.trim(),
+    people:num($('e_people').value),amount:num($('e_amount').value),note:$('e_note').value.trim(),
+    receipts:[...draftE],confirm:num($('e_confirm').value),noReceipt:$('e_noRcpt').checked,noReceiptReason:$('e_noRcptReason').value.trim()};
+}
+function updateE(){
+  const r=readE(),ent=ENT_CATS.includes(r.cat),has=draftE.length>0;
+  $('l_people').classList.toggle('req',ent);$('l_note').classList.toggle('req',ent);
+  $('e_per').textContent=r.amount>0&&r.people>0?yen(Math.floor(r.amount/r.people)):'—';
+  $('e_per').style.color=r.cat==='会議費'&&r.amount>0&&r.people>0&&r.amount/r.people>MEETING_LIMIT?'var(--err)':'';
+  if(selE>=draftE.length)selE=Math.max(0,draftE.length-1);
+  $('e_pv').innerHTML=has?`<div><img src="${esc(srcOf(draftE[selE]))}" data-act="zoomE" alt="領収書">${labelOf(draftE[selE])?`<div class="note">${esc(labelOf(draftE[selE]))}</div>`:''}</div>`:PV_EMPTY;
+  $('e_confirmWrap').hidden=!has;
+  $('e_noRcptWrap').hidden=has;
+  $('e_noRcptReason').hidden=has||!$('e_noRcpt').checked;
+  matchInd('e_mt',r.confirm,r.amount,$('e_confirm').value);
+  renderThumbs('e',draftE);
+}
+function clearE(keepDate){
+  const d=$('e_date').value;
+  ['e_date','e_payee','e_people','e_amount','e_note','e_confirm','e_noRcptReason'].forEach(id=>$(id).value='');
+  if(keepDate)$('e_date').value=d;
+  $('e_cat').value='';$('e_noRcpt').checked=false;
+  draftE=[];editE=null;selE=0;
+  $('e_title').textContent='立替経費を追加';$('e_add').textContent='追加する';$('e_cancel').hidden=true;
+  showErrs('e',{errors:[],warnings:[]});
+  updateE();renderE();
+}
+function loadE(r){
+  editE=r.id;draftE=[...r.receipts];selE=0;
+  $('e_date').value=r.date||'';$('e_cat').value=r.cat||'';$('e_payee').value=r.payee||'';
+  $('e_people').value=Number.isFinite(r.people)?r.people:'';$('e_amount').value=Number.isFinite(r.amount)?r.amount:'';
+  $('e_note').value=r.note||'';$('e_confirm').value=Number.isFinite(r.confirm)?r.confirm:'';
+  $('e_noRcpt').checked=!!r.noReceipt;$('e_noRcptReason').value=r.noReceiptReason||'';
+  const i=M().expense.findIndex(x=>x.id===r.id);
+  $('e_title').textContent=`立替経費 No.${i+1} を編集`;$('e_add').textContent='更新する';$('e_cancel').hidden=false;
+  showErrs('e',validateE(r));updateE();renderE();
+  $('e_form').scrollIntoView({behavior:'smooth'});
+}
+function submitE(){
+  const r=readE(),v=validateE(r),m=M();
+  v.warnings.push(...dupWarn(r,m.expense,keyE));
+  showErrs('e',v);
+  if(v.errors.length){toast('赤い項目を確認してください');return;}
+  const commit=()=>{
+    const i=m.expense.findIndex(x=>x.id===r.id);
+    if(i>=0)m.expense[i]=r;else m.expense.push(r);
+    sortRows(m.expense);
+    toast(i>=0?'更新しました':'追加しました');
+    save();clearE(true);renderAll();
+  };
+  if(v.warnings.length)showModal('確認してください',issueHtml(v.warnings.map(x=>({lv:'warn',m:x.m}))),[{label:'戻って直す'},{label:'このまま登録',pri:true,fn:commit}]);
+  else commit();
+}
+
+/* ---------- 一覧表示 ---------- */
+const tripText=r=>r.mode==='駐車場代'?'—':r.trip==='往'?'往復':r.trip==='片'?'片道':'';
+const routeText=r=>r.mode==='駐車場代'?esc(r.from):`${esc(r.from)} ～ ${esc(r.to)}`;
+function rcptText(r){return r.receipts.length?`📎${r.receipts.length}`:r.noReceipt?'なし':'';}
+function renderT(){
+  const rows=M().transport;
+  if(!rows.length){$('t_list').innerHTML='<div class="empty">まだ明細がありません</div>';return;}
+  $('t_list').innerHTML=`<table class="tbl cards"><thead><tr><th>No</th><th>日付</th><th>行先</th><th>交通機関</th><th>区間</th><th>片/往</th><th class="r">金額</th><th>領収書</th><th>状態</th><th></th></tr></thead><tbody>`+
+    rows.map((r,i)=>`<tr class="${editT===r.id?'editing':''}"><td data-l="No">${i+1}</td><td class="nw" data-l="日付">${fmtDate(r.date)}</td><td data-l="行先">${esc(r.dest)}</td><td class="nw" data-l="交通機関">${esc(r.mode)}</td><td data-l="区間">${routeText(r)}</td><td class="c" data-l="片/往">${tripText(r)}</td><td class="r" data-l="金額">${yen(r.amount)}</td><td class="c" data-l="領収書">${rcptText(r)}</td><td data-l="状態">${badge(validateT(r))}</td><td class="nw" data-l=""><span><button class="sm" data-act="editT" data-id="${r.id}">編集</button><button class="sm dng" data-act="delT" data-id="${r.id}">削除</button></span></td></tr>`).join('')+
+    `</tbody><tfoot><tr><td colspan="6" data-l="">合計（${rows.length}件）</td><td class="r" data-l="">${yen(sumAmt(rows))}</td><td colspan="3"></td></tr></tfoot></table>`;
+}
+function renderE(){
+  const rows=M().expense;
+  if(!rows.length){$('e_list').innerHTML='<div class="empty">まだ明細がありません</div>';return;}
+  $('e_list').innerHTML=`<table class="tbl cards"><thead><tr><th>No</th><th>日付</th><th>内容</th><th>支払先</th><th>備考</th><th class="r">人数</th><th class="r">金額</th><th>領収書</th><th>状態</th><th></th></tr></thead><tbody>`+
+    rows.map((r,i)=>`<tr class="${editE===r.id?'editing':''}"><td data-l="No">${i+1}</td><td class="nw" data-l="日付">${fmtDate(r.date)}</td><td class="nw" data-l="内容">${esc(r.cat)}</td><td data-l="支払先">${esc(r.payee)}</td><td data-l="備考">${esc(r.note)}</td><td class="r" data-l="人数">${r.people>0?r.people:''}</td><td class="r" data-l="金額">${yen(r.amount)}</td><td class="c" data-l="領収書">${rcptText(r)}</td><td data-l="状態">${badge(validateE(r))}</td><td class="nw" data-l=""><span><button class="sm" data-act="editE" data-id="${r.id}">編集</button><button class="sm dng" data-act="delE" data-id="${r.id}">削除</button></span></td></tr>`).join('')+
+    `</tbody><tfoot><tr><td colspan="6" data-l="">合計（${rows.length}件）</td><td class="r" data-l="">${yen(sumAmt(rows))}</td><td colspan="3"></td></tr></tfoot></table>`;
+}
+function renderSummary(){
+  const m=M(),is=checkAll(),ne=is.filter(x=>x.lv==='err').length,nw=is.length-ne;
+  const ts=sumAmt(m.transport),es=sumAmt(m.expense);
+  $('summary').innerHTML=`
+    <div><div class="k">${monthLabel()} 交通費</div><div class="v">${yen(ts)}<small>${m.transport.length}件</small></div></div>
+    <div><div class="k">立替経費</div><div class="v">${yen(es)}<small>${m.expense.length}件</small></div></div>
+    <div><div class="k">精算額合計</div><div class="v">${yen(ts+es)}</div></div>
+    <div class="chk">${ne?`<span class="bdg err">要修正 ${ne}件</span> `:''}${nw?`<span class="bdg warn">注意 ${nw}件</span>`:''}${!ne&&!nw?'<span class="bdg ok">提出前チェックOK</span>':''}</div>`;
+  $('issues').innerHTML=issueHtml(is);
+}
+function renderSettings(){
+  fillSelect($('t_route'),[],'— 登録した区間から選ぶ —');
+  $('t_route').innerHTML+=state.routes.map(r=>`<option value="${r.id}">${esc(r.from)} → ${esc(r.to)}（${esc(r.mode)}・片道${yen(r.fare)}）</option>`).join('');
+  $('s_routes').innerHTML=state.routes.length?`<table class="tbl"><thead><tr><th>出発</th><th>到着</th><th>交通機関</th><th class="r">片道運賃</th><th class="r">往復</th><th></th></tr></thead><tbody>`+
+    state.routes.map(r=>`<tr><td>${esc(r.from)}</td><td>${esc(r.to)}</td><td>${esc(r.mode)}</td><td class="r">${yen(r.fare)}</td><td class="r">${yen(r.fare*2)}</td><td class="nw"><button class="sm dng" data-act="delRoute" data-id="${r.id}">削除</button></td></tr>`).join('')+'</tbody></table>'
+    :'<div class="empty">登録された区間はありません</div>';
+  $('s_dests').innerHTML=state.dests.map((d,i)=>`<span class="chip">${esc(d)}<button data-act="delDest" data-i="${i}" title="削除">×</button></span>`).join('')||'<span class="note">候補はありません</span>';
+  $('destList').innerHTML=state.dests.map(d=>`<option value="${esc(d)}">`).join('');
+}
+function renderHeader(){
+  const m=M();
+  $('h_app').value=state.applicant;$('h_month').value=state.currentMonth;$('h_date').value=m.applyDate||'';$('h_note').value=m.note||'';
+}
+function renderAll(){renderHeader();renderSettings();renderT();renderE();renderSummary();}
+
+/* ---------- PDF（印刷） ---------- */
+function buildPrint(warns){
+  const m=M(),T=m.transport,E=m.expense,ts=sumAmt(T),es=sumAmt(E);
+  const head=t=>`<h1>${t}</h1><div class="pm"><div>対象月：${monthLabel()}分</div><div>申請日：${fmtDate(m.applyDate)}</div><div>申請者：${esc(state.applicant)}</div></div>`;
+  const cats={};E.forEach(r=>{(cats[r.cat]=cats[r.cat]||{n:0,s:0});cats[r.cat].n++;cats[r.cat].s+=r.amount;});
+  const order=[...CATS.filter(c=>cats[c]),...Object.keys(cats).filter(c=>!CATS.includes(c))];
+  const rcNote=r=>r.receipts.length?`添付${r.receipts.length}枚`:r.noReceipt?`領収書なし：${esc(r.noReceiptReason)}`:'';
+  let h=`<section class="pg">${head('経費精算書')}
+    <h2>精算額の内訳</h2>
+    <table><thead><tr><th>区分</th><th>件数</th><th>金額</th></tr></thead><tbody>
+    ${T.length?`<tr><td>交通費</td><td class="r">${T.length}件</td><td class="r">${yen(ts)}</td></tr>`:''}
+    ${order.map(c=>`<tr><td>立替経費：${esc(c)}</td><td class="r">${cats[c].n}件</td><td class="r">${yen(cats[c].s)}</td></tr>`).join('')}
+    </tbody><tfoot><tr><th>精算額合計</th><td class="r">${T.length+E.length}件</td><td class="r">${yen(ts+es)}</td></tr></tfoot></table>
+    ${warns.length?`<h2>確認事項</h2><ul>${warns.map(x=>`<li>${esc(x.where)}：${esc(x.m)}</li>`).join('')}</ul>`:''}
+    <h2>備考欄・管理部門記入欄</h2><div style="border:.5pt solid #444;min-height:22mm;padding:2mm;white-space:pre-wrap">${esc(m.note)}</div>
+    <div class="stamps"><div><span>申請者</span></div><div><span>確認</span></div><div><span>承認</span></div></div>
+    <p class="pf">本書は経費精算アプリで作成。必須項目・片道/往復・領収書金額の二重入力照合のチェックを通過済み（${new Date().toLocaleString('ja-JP')}）。</p>
+  </section>`;
+  if(T.length)h+=`<section class="pg">${head('交通費精算書')}
+    <table><thead><tr><th>No</th><th>日付</th><th>行先</th><th>交通機関</th><th>区間</th><th>片/往</th><th>金額</th><th>備考</th></tr></thead><tbody>
+    ${T.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${fmtDate(r.date)}</td><td>${esc(r.dest)}</td><td>${esc(r.mode)}</td><td>${routeText(r)}</td><td class="c">${tripText(r)}</td><td class="r">${yen(r.amount)}</td><td>${[r.trip==='往'&&!FIXED_MODES.includes(r.mode)?`${r.fare.toLocaleString()}×2`:'',esc(r.note),rcNote(r)].filter(Boolean).join('／')}</td></tr>`).join('')}
+    </tbody><tfoot><tr><th colspan="6">合計（${T.length}件）</th><td class="r">${yen(ts)}</td><td></td></tr></tfoot></table></section>`;
+  if(E.length)h+=`<section class="pg">${head('立替経費精算書')}
+    <table><thead><tr><th>No</th><th>日付</th><th>内容</th><th>支払先</th><th>備考</th><th>人数</th><th>1人あたり</th><th>金額</th><th>領収書</th></tr></thead><tbody>
+    ${E.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${fmtDate(r.date)}</td><td>${esc(r.cat)}</td><td>${esc(r.payee)}</td><td>${esc(r.note)}</td><td class="r">${r.people>0?r.people+'名':''}</td><td class="r">${r.people>0?yen(Math.floor(r.amount/r.people)):''}</td><td class="r">${yen(r.amount)}</td><td>${rcNote(r)}</td></tr>`).join('')}
+    </tbody><tfoot><tr><th colspan="7">合計（${E.length}件）</th><td class="r">${yen(es)}</td><td></td></tr></tfoot></table></section>`;
+  const figs=[];
+  const lb=x=>labelOf(x)?`<br>${esc(labelOf(x))}`:'';
+  T.forEach((r,i)=>r.receipts.forEach((x,j)=>figs.push({src:srcOf(x),cap:`交通費 No.${i+1}（${j+1}/${r.receipts.length}）　${fmtDate(r.date)}　${esc(r.mode)}　${yen(r.amount)}（金額照合済）${lb(x)}`})));
+  E.forEach((r,i)=>r.receipts.forEach((x,j)=>figs.push({src:srcOf(x),cap:`立替経費 No.${i+1}（${j+1}/${r.receipts.length}）　${fmtDate(r.date)}　${esc(r.payee)}　${yen(r.amount)}（金額照合済）${lb(x)}`})));
+  if(figs.length)h+=`<section class="pg">${head('領収書等貼り付け')}<div class="rcs">${figs.map(f=>`<figure class="rc"><img src="${esc(f.src)}" alt=""><figcaption>${f.cap}</figcaption></figure>`).join('')}</div></section>`;
+  $('print').innerHTML=h;
+}
+async function doPrint(warns){
+  buildPrint(warns);
+  await Promise.all([...$('print').querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):null));
+  const old=document.title;
+  document.title=`経費精算書_${monthLabel()}分_${state.applicant.trim()}`;
+  window.addEventListener('afterprint',()=>{document.title=old;},{once:true});
+  window.print();
+}
+$('b_pdf').onclick=()=>{
+  const is=checkAll(),errs=is.filter(x=>x.lv==='err'),warns=is.filter(x=>x.lv==='warn');
+  const m=M();
+  const recap=`<p>交通費 ${m.transport.length}件 ${yen(sumAmt(m.transport))}／立替経費 ${m.expense.length}件 ${yen(sumAmt(m.expense))}／合計 ${yen(sumAmt(m.transport)+sumAmt(m.expense))}</p>`;
+  if(errs.length){showModal('PDFを発行できません',`<p>次の項目を修正してください。</p>${issueHtml(errs)}`);return;}
+  const howto=IS_IOS
+    ?'<p class="note">プリントオプションが開いたら、上部の共有ボタン（□↑）→「"ファイル"に保存」でPDFとして保存できます。メールやLINEで直接送ることもできます。</p>'
+    :'<p class="note">印刷画面が開いたら、送信先（プリンター）を「PDFに保存」にして保存してください。</p>';
+  if(warns.length)showModal('確認事項があります',`${recap}${issueHtml(warns)}<p>内容に問題がなければ、このまま発行できます（確認事項はPDFにも記載されます）。</p>${howto}`,
+    [{label:'戻って確認'},{label:'このままPDF発行',pri:true,fn:()=>doPrint(warns)}]);
+  else showModal('提出前チェックOK',`${recap}${howto}`,[{label:'戻る'},{label:'PDF発行',pri:true,fn:()=>doPrint([])}]);
+};
+
+/* ---------- イベント ---------- */
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
+  ['t','e','s'].forEach(k=>$('pane-'+k).hidden=k!==b.dataset.tab);
+});
+$('h_app').oninput=()=>{state.applicant=$('h_app').value;save();renderSummary();};
+$('h_date').onchange=()=>{M().applyDate=$('h_date').value;save();renderSummary();};
+$('h_note').oninput=()=>{M().note=$('h_note').value;save();};
+$('h_month').onchange=()=>{
+  if(!$('h_month').value){$('h_month').value=state.currentMonth;return;}
+  state.currentMonth=$('h_month').value;M();save();clearT();clearE();renderAll();
+};
+
+$('t_form').addEventListener('input',e=>{e.target.classList&&e.target.classList.remove('bad');if(e.target.name==='trip')$('t_trip').classList.remove('bad');updateT();});
+$('t_form').addEventListener('change',updateT);
+$('t_route').onchange=()=>{
+  const r=state.routes.find(x=>x.id===$('t_route').value);if(!r)return;
+  $('t_from').value=r.from;$('t_to').value=r.to;$('t_mode').value=r.mode;$('t_fare').value=r.fare;$('t_route').value='';
+  ['t_from','t_to','t_mode','t_fare'].forEach(id=>$(id).classList.remove('bad'));
+  updateT();toast('区間と運賃を入力しました。片道／往復を選んでください');
+};
+$('t_swap').onclick=()=>{const a=$('t_from').value;$('t_from').value=$('t_to').value;$('t_to').value=a;updateT();};
+$('t_file').onchange=async e=>{await addFiles([...e.target.files],draftT);e.target.value='';$('t_file').classList.remove('bad');updateT();};
+$('t_add').onclick=submitT;$('t_clear').onclick=()=>clearT(false);$('t_cancel').onclick=()=>clearT(false);
+
+$('e_form').addEventListener('input',e=>{e.target.classList&&e.target.classList.remove('bad');updateE();});
+$('e_form').addEventListener('change',updateE);
+$('e_file').onchange=async e=>{await addFiles([...e.target.files],draftE);selE=draftE.length-1;e.target.value='';$('e_file').classList.remove('bad');updateE();};
+const pv=$('e_pv');
+pv.addEventListener('dragover',e=>{e.preventDefault();pv.classList.add('drag');});
+pv.addEventListener('dragleave',()=>pv.classList.remove('drag'));
+pv.addEventListener('drop',async e=>{e.preventDefault();pv.classList.remove('drag');await addFiles([...e.dataTransfer.files],draftE);selE=draftE.length-1;$('e_file').classList.remove('bad');updateE();});
+$('e_add').onclick=submitE;$('e_clear').onclick=()=>clearE(false);$('e_cancel').onclick=()=>clearE(false);
+blockPaste($('t_confirm'));blockPaste($('e_confirm'));
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const act=b.dataset.act,id=b.dataset.id,m=M();
+  if(act==='editT'){const r=m.transport.find(x=>x.id===id);if(r)loadT(r);}
+  if(act==='editE'){const r=m.expense.find(x=>x.id===id);if(r)loadE(r);}
+  if(act==='delT'||act==='delE'){
+    const arr=act==='delT'?m.transport:m.expense,i=arr.findIndex(x=>x.id===id);if(i<0)return;const r=arr[i];
+    showModal('明細を削除しますか？',`<p>${act==='delT'?'交通費':'立替経費'} No.${i+1}　${fmtDate(r.date)}　${yen(r.amount)}</p>`,[{label:'やめる'},{label:'削除する',pri:true,fn:()=>{
+      arr.splice(arr.indexOf(r),1);
+      if(act==='delT'&&editT===id)clearT(false);if(act==='delE'&&editE===id)clearE(false);
+      save();renderAll();toast('削除しました');}}]);
+  }
+  if(act==='thumb'){const p=b.dataset.p,i=+b.dataset.i;if(p==='e'){selE=i;updateE();}else viewImg(srcOf(draftT[i]));}
+  if(act==='zoomE')viewImg(srcOf(draftE[selE]));
+  if(act==='rmThumb'){const p=b.dataset.p,i=+b.dataset.i;(p==='t'?draftT:draftE).splice(i,1);p==='t'?updateT():updateE();}
+  if(act==='delRoute'){state.routes=state.routes.filter(x=>x.id!==id);save();renderSettings();}
+  if(act==='delDest'){state.dests.splice(+b.dataset.i,1);save();renderSettings();}
+});
+
+$('s_addRoute').onclick=()=>{
+  const from=$('s_from').value.trim(),to=$('s_to').value.trim(),mode=$('s_mode').value,fare=num($('s_fare').value);
+  if(!from||!to||!mode||!(fare>0)){toast('出発・到着・交通機関・片道運賃をすべて入力してください');return;}
+  if(findRoute(from,to)){toast('この区間はすでに登録されています');return;}
+  state.routes.push({id:uid(),from,to,mode,fare});['s_from','s_to','s_fare'].forEach(i=>$(i).value='');
+  save();renderSettings();toast('区間を登録しました');
+};
+$('s_addDest').onclick=()=>{const d=$('s_dest').value.trim();if(!d)return;if(!state.dests.includes(d))state.dests.push(d);$('s_dest').value='';save();renderSettings();};
+$('s_export').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`経費精算データ_${state.applicant.trim()||'未入力'}_${today()}.json`;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$('s_importBtn').onclick=()=>$('s_import').click();
+$('s_import').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const obj=JSON.parse(await f.text());
+    if(!obj||typeof obj!=='object'||!obj.months)throw new Error('format');
+    showModal('バックアップから復元しますか？','<p>いま入っているデータはすべて置き換わります。</p>',[{label:'やめる'},{label:'復元する',pri:true,fn:()=>{
+      state=migrate(obj);save();clearT();clearE();renderAll();toast('復元しました');}}]);
+  }catch(err){toast('バックアップファイルを読み込めませんでした');}
+};
+
+/* ---------- 起動 ---------- */
+(async()=>{
+  fillSelect($('t_mode'),MODES,'選んでください');
+  fillSelect($('s_mode'),MODES,'選んでください');
+  fillSelect($('e_cat'),CATS,'選んでください');
+  const ok=await idb.open();
+  const s=ok?await idb.get('state'):undefined;
+  state=s?migrate(s):defaults();
+  M();
+  if(!ok)$('saveStatus').textContent='⚠ このブラウザでは自動保存が使えません。作業後は必ずバックアップを保存してください。';
+  // ブラウザにデータの長期保存を依頼（対応ブラウザのみ）
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});}catch(e){}
+  let tipClosed=false;try{tipClosed=localStorage.getItem('iosTipClosed')==='1';}catch(e){}
+  $('iosTip').hidden=!(IS_IOS&&!IS_STANDALONE&&!tipClosed);
+  $('iosTipClose').onclick=()=>{$('iosTip').hidden=true;try{localStorage.setItem('iosTipClosed','1');}catch(e){}};
+  renderAll();updateT();updateE();
+})();
+</script>
+</body>
+</html>
