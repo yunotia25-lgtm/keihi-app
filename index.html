@@ -159,7 +159,7 @@ ol.guide li{margin-bottom:4px}
 #print th,#print td{border:.5pt solid #444;padding:1.4mm 1.8mm;vertical-align:top}
 #print thead th{background:#e6e9ed;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:nowrap}
 #print tfoot th,#print tfoot td{font-weight:700;background:#f3f4f6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-#print .r{text-align:right}#print .c{text-align:center}
+#print .r{text-align:right;white-space:nowrap}#print .c{text-align:center}#print .nw{white-space:nowrap}
 #print ul{margin:0;padding-left:5mm;font-size:9pt}
 #print .stamps{display:flex;justify-content:flex-end;margin-top:8mm}
 #print .stamps div{width:24mm;height:26mm;border:.5pt solid #444;margin-left:-.5pt;text-align:center;font-size:8pt}
@@ -167,7 +167,10 @@ ol.guide li{margin-bottom:4px}
 #print .pf{font-size:8pt;color:#444;margin-top:6mm}
 #print .rcs{display:grid;grid-template-columns:1fr 1fr;gap:5mm}
 #print .rc{break-inside:avoid;margin:0;border:.5pt solid #999;padding:2mm}
-#print .rc img{display:block;max-width:100%;max-height:118mm;margin:0 auto}
+#print .rc img{display:block;max-width:100%;max-height:100mm;margin:0 auto}
+/* PDF作成時：画面上（作成中ダイアログの裏）に186mm幅で並べて画像化する */
+#print.stage{display:block;position:absolute;left:0;top:0;width:186mm;background:#fff;z-index:1}
+#print.stage .pg{background:#fff;padding:0 0 3mm}
 #print .rc figcaption{font-size:8pt;margin-top:1.5mm}
 </style>
 </head>
@@ -301,9 +304,9 @@ ol.guide li{margin-bottom:4px}
           <li>上の欄に<b>申請者・対象月・申請日</b>を入力します。</li>
           <li>「交通費」「立替経費」タブで明細を1件ずつ追加します。未入力の必須項目があると追加できません。</li>
           <li>立替経費は<b>領収書の写真、または請求書のPDFを添付</b>し、それを見ながら<b>金額をもう一度手入力</b>します。金額欄と一致しないと追加できません。PDFは1ページずつ画像として取り込みます（最大10ページ。読み込みにはインターネット接続が必要です）。</li>
-          <li>「提出前チェック → PDF発行」を押し、印刷画面で送信先を<b>「PDFに保存」</b>（または Microsoft Print to PDF）にして保存します。</li>
+          <li>「提出前チェック → PDF発行」を押すとPDFファイルが作成されます。PCは<b>「ダウンロード」</b>、iPhoneは<b>「保存・送信」</b>から保存・送付します（インターネット接続が必要です）。</li>
         </ol>
-        <p class="note"><b>iPhoneの場合：</b>Safariで開き、共有ボタン（□↑）→「ホーム画面に追加」してアイコンから使ってください。領収書は「写真を撮る」で直接撮影できます。PDFはプリントオプションの共有ボタン →「"ファイル"に保存」で保存します。</p>
+        <p class="note"><b>iPhoneの場合：</b>Safariで開き、共有ボタン（□↑）→「ホーム画面に追加」してアイコンから使ってください。領収書は「写真を撮る」で直接撮影できます。PDFは作成後の「保存・送信」→「"ファイル"に保存」で保存でき、メールやLINEで直接送ることもできます。</p>
         <p class="note">データはこの端末のブラウザ内にだけ自動保存されます（PCとiPhoneの間で自動的には共有されません）。ブラウザの履歴削除などで消えることがあるため、月ごとにバックアップを保存してください。</p>
       </section>
       <section class="card">
@@ -416,7 +419,7 @@ function showModal(title,html,btns){
     el.onclick=()=>{$('modal').hidden=true;if(b.fn)b.fn();};f.appendChild(el);});
   $('modal').hidden=false;
 }
-$('modal').addEventListener('click',e=>{if(e.target.id==='modal')$('modal').hidden=true;});
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal'&&!pdfBusy)$('modal').hidden=true;});
 function viewImg(src){showModal('',`<img src="${esc(src)}" alt="領収書">`);}
 const issueHtml=list=>list.map(x=>`<div class="${x.lv==='err'?'e':'w'}">${x.where?`<b>${esc(x.where)}</b>：`:''}${esc(x.m)}</div>`).join('');
 
@@ -762,13 +765,13 @@ function buildPrint(warns){
     ${order.map(c=>`<tr><td>立替経費：${esc(c)}</td><td class="r">${cats[c].n}件</td><td class="r">${yen(cats[c].s)}</td></tr>`).join('')}
     </tbody><tfoot><tr><th>精算額合計</th><td class="r">${T.length+E.length}件</td><td class="r">${yen(ts+es)}</td></tr></tfoot></table>
     ${warns.length?`<h2>確認事項</h2><ul>${warns.map(x=>`<li>${esc(x.where)}：${esc(x.m)}</li>`).join('')}</ul>`:''}
-    <h2>備考欄・管理部門記入欄</h2><div style="border:.5pt solid #444;min-height:22mm;padding:2mm;white-space:pre-wrap">${esc(m.note)}</div>
+    <h2>備考欄・管理部門記入欄</h2><div class="box" style="border:.5pt solid #444;min-height:22mm;padding:2mm;white-space:pre-wrap">${esc(m.note)}</div>
     <div class="stamps"><div><span>申請者</span></div><div><span>確認</span></div><div><span>承認</span></div></div>
     <p class="pf">本書は経費精算アプリで作成。必須項目・片道/往復・領収書金額の二重入力照合のチェックを通過済み（${new Date().toLocaleString('ja-JP')}）。</p>
   </section>`;
   if(T.length)h+=`<section class="pg">${head('交通費精算書')}
-    <table><thead><tr><th>No</th><th>日付</th><th>行先</th><th>交通機関</th><th>区間</th><th>片/往</th><th>金額</th><th>備考</th></tr></thead><tbody>
-    ${T.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${fmtDate(r.date)}</td><td>${esc(r.dest)}</td><td>${esc(r.mode)}</td><td>${routeText(r)}</td><td class="c">${tripText(r)}</td><td class="r">${yen(r.amount)}</td><td>${[r.trip==='往'&&!FIXED_MODES.includes(r.mode)?`${r.fare.toLocaleString()}×2`:'',esc(r.note),rcNote(r)].filter(Boolean).join('／')}</td></tr>`).join('')}
+    <table><thead><tr><th>No</th><th>日付</th><th>行先</th><th>交通機関</th><th>区間</th><th>片/往</th><th>金額</th><th style="width:24%">備考</th></tr></thead><tbody>
+    ${T.map((r,i)=>`<tr><td class="c">${i+1}</td><td class="nw">${fmtDate(r.date)}</td><td>${esc(r.dest)}</td><td class="nw">${esc(r.mode)}</td><td>${routeText(r)}</td><td class="c nw">${tripText(r)}</td><td class="r">${yen(r.amount)}</td><td>${[r.trip==='往'&&!FIXED_MODES.includes(r.mode)?`${r.fare.toLocaleString()}×2`:'',esc(r.note),rcNote(r)].filter(Boolean).join('／')}</td></tr>`).join('')}
     </tbody><tfoot><tr><th colspan="6">合計（${T.length}件）</th><td class="r">${yen(ts)}</td><td></td></tr></tfoot></table></section>`;
   if(E.length)h+=`<section class="pg">${head('立替経費精算書')}
     <table><thead><tr><th>No</th><th>日付</th><th>内容</th><th>支払先</th><th>備考</th><th>人数</th><th>1人あたり</th><th>金額</th><th>領収書</th></tr></thead><tbody>
@@ -778,28 +781,119 @@ function buildPrint(warns){
   const lb=x=>labelOf(x)?`<br>${esc(labelOf(x))}`:'';
   T.forEach((r,i)=>r.receipts.forEach((x,j)=>figs.push({src:srcOf(x),cap:`交通費 No.${i+1}（${j+1}/${r.receipts.length}）　${fmtDate(r.date)}　${esc(r.mode)}　${yen(r.amount)}（金額照合済）${lb(x)}`})));
   E.forEach((r,i)=>r.receipts.forEach((x,j)=>figs.push({src:srcOf(x),cap:`立替経費 No.${i+1}（${j+1}/${r.receipts.length}）　${fmtDate(r.date)}　${esc(r.payee)}　${yen(r.amount)}（金額照合済）${lb(x)}`})));
-  if(figs.length)h+=`<section class="pg">${head('領収書等貼り付け')}<div class="rcs">${figs.map(f=>`<figure class="rc"><img src="${esc(f.src)}" alt=""><figcaption>${f.cap}</figcaption></figure>`).join('')}</div></section>`;
+  // 1ページに4枚（2×2）ずつ
+  for(let k=0;k<figs.length;k+=4)h+=`<section class="pg">${head(k?'領収書等貼り付け（続き）':'領収書等貼り付け')}<div class="rcs">${figs.slice(k,k+4).map(f=>`<figure class="rc"><img src="${esc(f.src)}" alt=""><figcaption>${f.cap}</figcaption></figure>`).join('')}</div></section>`;
   $('print').innerHTML=h;
 }
-async function doPrint(warns){
+const pdfName=()=>`経費精算書_${monthLabel()}分_${state.applicant.trim()}.pdf`;
+/* 予備：ブラウザの印刷画面から保存（PC向け）。iPhoneはボタン操作の直後でないと印刷できないため await を挟まない */
+function printFallback(warns){
   buildPrint(warns);
-  await Promise.all([...$('print').querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):null));
   const old=document.title;
-  document.title=`経費精算書_${monthLabel()}分_${state.applicant.trim()}`;
+  document.title=pdfName().replace(/\.pdf$/,'');
   window.addEventListener('afterprint',()=>{document.title=old;},{once:true});
   window.print();
+}
+/* PDFファイルを直接作る（iPhoneのSafari・ホーム画面アプリでも動く）。
+   各ページを html2canvas で画像化し、jsPDF でA4のPDFにまとめる */
+const LIBS={h2c:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+  jspdf:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'};
+const scriptCache={};
+function loadScript(src){
+  if(!scriptCache[src])scriptCache[src]=new Promise((res,rej)=>{
+    const s=document.createElement('script');s.src=src;s.onload=res;
+    s.onerror=()=>{delete scriptCache[src];s.remove();rej(new Error('lib-load'));};
+    document.head.appendChild(s);
+  });
+  return scriptCache[src];
+}
+let pdfBusy=false;
+const setProg=t=>{const el=$('pdfProg');if(el)el.textContent=t;};
+async function makePdf(warns){
+  if(pdfBusy)return;pdfBusy=true;
+  showModal('PDFを作成しています',`<p id="pdfProg">準備しています…</p><p class="note">領収書が多いと数十秒かかることがあります。画面を閉じずにお待ちください。</p>`,[]);
+  const stage=$('print');
+  try{
+    await Promise.all([loadScript(LIBS.h2c),loadScript(LIBS.jspdf)]);
+    buildPrint(warns);
+    stage.classList.add('stage');
+    window.scrollTo(0,0);
+    await Promise.all([...stage.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):null));
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:'portrait',compress:true});
+    const secs=[...stage.querySelectorAll('.pg')];
+    let n=0;
+    for(let si=0;si<secs.length;si++){
+      setProg(`ページを作成中…（${si+1}/${secs.length}）`);
+      for(const p of await renderSection(secs[si])){
+        if(n++)pdf.addPage();
+        pdf.addImage(p.url,'JPEG',12,12,186,p.hMm,undefined,'FAST');
+      }
+    }
+    pdf.setFontSize(8);pdf.setTextColor(90);
+    for(let i=1;i<=n;i++){pdf.setPage(i);pdf.text(`${i} / ${n}`,105,291,{align:'center'});}
+    const blob=pdf.output('blob');
+    window.__lastPdf={blob,pages:n};
+    showPdfResult(blob,n);
+  }catch(e){
+    const offline=e&&e.message==='lib-load';
+    showModal('PDFを作成できませんでした',
+      `<p>${offline?'PDF作成の部品を読み込めませんでした。インターネットに接続してから、もう一度お試しください。':'PDFの作成中にエラーが発生しました。'}</p>`+
+      (IS_IOS?'':'<p class="note">PCの場合は「印刷画面から保存」でもPDFを作れます。</p>'),
+      IS_IOS?[{label:'閉じる'}]:[{label:'閉じる'},{label:'印刷画面から保存',fn:()=>printFallback(warns)}]);
+  }finally{
+    stage.classList.remove('stage');stage.innerHTML='';pdfBusy=false;
+  }
+}
+/* 1つのセクションを画像化し、A4の高さを超える場合は行・領収書の切れ目で分割する */
+async function renderSection(sec){
+  const W=sec.offsetWidth,H=sec.offsetHeight,pxPerMm=W/186,maxH=273*pxPerMm;
+  const top0=sec.getBoundingClientRect().top;
+  const atoms=[...sec.querySelectorAll('tr,.rc,li,.stamps,h1,h2,.pm,.pf,.box')].map(e=>{const r=e.getBoundingClientRect();return[r.top-top0,r.bottom-top0];});
+  const cuts=[0];let start=0;
+  while(H-start>maxH+1){
+    const limit=start+maxH;let best=start;
+    for(const[,b]of atoms){
+      if(b>start+1&&b<=limit&&b>best&&!atoms.some(([t,bb])=>t<b-.5&&bb>b+.5))best=b;
+    }
+    if(best<=start)best=limit; // 1要素がページより大きい場合はそのまま切る
+    cuts.push(best);start=best;
+  }
+  cuts.push(H);
+  const scale=Math.min(2,Math.sqrt(14e6/(W*H))); // iPhoneのキャンバス上限対策
+  const cv=await window.html2canvas(sec,{scale,backgroundColor:'#ffffff',logging:false,useCORS:false});
+  const ratio=cv.width/W,out=[];
+  for(let i=0;i<cuts.length-1;i++){
+    const a=cuts[i],b=cuts[i+1];if(b-a<1)continue;
+    const c=document.createElement('canvas');c.width=cv.width;c.height=Math.ceil((b-a)*ratio);
+    const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);
+    g.drawImage(cv,0,Math.floor(a*ratio),cv.width,c.height,0,0,c.width,c.height);
+    out.push({url:c.toDataURL('image/jpeg',0.9),hMm:(b-a)/pxPerMm});
+    c.width=c.height=0;
+  }
+  cv.width=cv.height=0;
+  return out;
+}
+function showPdfResult(blob,pages){
+  const name=pdfName(),file=new File([blob],name,{type:'application/pdf'}),url=URL.createObjectURL(blob);
+  const download=()=>{const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();};
+  const canShare=!!(navigator.canShare&&navigator.share&&navigator.canShare({files:[file]}));
+  const btns=[{label:'閉じる'},{label:'開いて確認',fn:()=>window.open(url,'_blank')}];
+  if(canShare)btns.push({label:'ダウンロード',fn:download},{label:'保存・送信',pri:true,fn:()=>navigator.share({files:[file],title:name}).catch(()=>{})});
+  else btns.push({label:'ダウンロード',pri:true,fn:download});
+  showModal('PDFができました',
+    `<p><b>${esc(name)}</b>（${pages}ページ・${(blob.size/1048576).toFixed(1)}MB）</p>`+
+    (canShare?'<p class="note">「保存・送信」から「"ファイル"に保存」やメール・LINEを選べます。</p>':'<p class="note">「ダウンロード」でPDFファイルを保存します。</p>'),btns);
 }
 $('b_pdf').onclick=()=>{
   const is=checkAll(),errs=is.filter(x=>x.lv==='err'),warns=is.filter(x=>x.lv==='warn');
   const m=M();
   const recap=`<p>交通費 ${m.transport.length}件 ${yen(sumAmt(m.transport))}／立替経費 ${m.expense.length}件 ${yen(sumAmt(m.expense))}／合計 ${yen(sumAmt(m.transport)+sumAmt(m.expense))}</p>`;
   if(errs.length){showModal('PDFを発行できません',`<p>次の項目を修正してください。</p>${issueHtml(errs)}`);return;}
-  const howto=IS_IOS
-    ?'<p class="note">プリントオプションが開いたら、上部の共有ボタン（□↑）→「"ファイル"に保存」でPDFとして保存できます。メールやLINEで直接送ることもできます。</p>'
-    :'<p class="note">印刷画面が開いたら、送信先（プリンター）を「PDFに保存」にして保存してください。</p>';
+  const howto='<p class="note">PDFファイルを作成します。作成後に保存・送信の方法を選べます（インターネット接続が必要です）。</p>';
   if(warns.length)showModal('確認事項があります',`${recap}${issueHtml(warns)}<p>内容に問題がなければ、このまま発行できます（確認事項はPDFにも記載されます）。</p>${howto}`,
-    [{label:'戻って確認'},{label:'このままPDF発行',pri:true,fn:()=>doPrint(warns)}]);
-  else showModal('提出前チェックOK',`${recap}${howto}`,[{label:'戻る'},{label:'PDF発行',pri:true,fn:()=>doPrint([])}]);
+    [{label:'戻って確認'},{label:'このままPDF発行',pri:true,fn:()=>makePdf(warns)}]);
+  else showModal('提出前チェックOK',`${recap}${howto}`,[{label:'戻る'},{label:'PDF発行',pri:true,fn:()=>makePdf([])}]);
 };
 
 /* ---------- イベント ---------- */
